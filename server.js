@@ -7,10 +7,22 @@ const mysql = require('mysql2/promise');
 const postsRouter = require('./routes/posts');
 
 const app = express();
-app.use(cors());
+
+// CORS 설정 업데이트
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://frontend-aws-six.vercel.app',
+    'https://*.vercel.app'	  
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
-// ✅ DB 연결 풀 생성
+// DB 연결 풀 생성
 const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -18,7 +30,16 @@ const db = mysql.createPool({
   database: process.env.DB_NAME,
 });
 
-// ✅ 회원가입
+// GET 요청 처리 추가
+app.get('/login', (req, res) => {
+  res.json({ message: '로그인 페이지' });
+});
+
+app.get('/signup', (req, res) => {
+  res.json({ message: '회원가입 페이지' });
+});
+
+// POST 요청 처리
 app.post('/signup', async (req, res) => {
   const { email, password } = req.body;
 
@@ -38,7 +59,6 @@ app.post('/signup', async (req, res) => {
   }
 });
 
-// ✅ 로그인
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -64,9 +84,14 @@ app.post('/login', async (req, res) => {
 
 app.use('/posts', postsRouter);
 
-app.get('/', (req, res) => res.send('서버 정상 작동 중'));
-
-app.listen(3000, '0.0.0.0', () => {
-  console.log('서버 실행 중: http://0.0.0.0:3000');
+// 헬스 체크 엔드포인트 추가
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
 });
 
+app.get('/', (req, res) => res.send('서버 정상 작동 중'));
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`서버 실행 중: http://0.0.0.0:${PORT}`);
+});
